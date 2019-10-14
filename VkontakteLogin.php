@@ -42,13 +42,13 @@ final class VkontakteLogin
 
         add_action('plugins_loaded', function(){
             if(!class_exists('\Socialify\General')){
+                add_action( 'admin_notices',  [__CLASS__, 'notice_no_socialify']);
                 return;
             }
 
             add_action('admin_init', [__CLASS__, 'add_settings']);
             add_filter('socialify_user_profile', [__CLASS__, 'auth_handler'], 11, 2);
         });
-
     }
 
     public static function auth_handler($userProfile, $endpoint)
@@ -178,6 +178,23 @@ final class VkontakteLogin
                 'value' => @get_option(self::$option_name)['secret'],
             ]
         );
+    }
+
+    /**
+     * if no main plugin - show notice
+     */
+    public static function notice_no_socialify()
+    {
+        $plugin_data = get_file_data(__FILE__, ['name'=>'Plugin Name'] );
+        if(empty($plugin_data['name'])){
+            return;
+        }
+
+        $class = 'notice notice-error';
+        $message = __( 'Oops! No exist Socialify plugin. Please install and activate main plugin.', 'socialify' );
+        $message .= ' ' . sprintf(__('%s Deactivated.', 'socialify'), $plugin_data['name']);
+        $link = '<a href="https://github.com/uptimizt/socialify" target="_blank">https://github.com/uptimizt/socialify</a>';
+        printf( '<div class="%s"><p>%s %s</p></div>', esc_attr( $class ), esc_html( $message ), $link );
     }
 }
 
