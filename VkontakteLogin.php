@@ -48,7 +48,22 @@ final class VkontakteLogin
 
             add_action('admin_init', [__CLASS__, 'add_settings']);
             add_filter('socialify_user_profile', [__CLASS__, 'auth_handler'], 11, 2);
+
+            add_filter('socialify_shortcode_data', [__CLASS__, 'add_btn_for_shortcode']);
+
         });
+    }
+
+    /**
+     * add_btn_for_shortcode
+     */
+    public static function add_btn_for_shortcode($data)
+    {
+        $data['login_items']['vkontakte'] = [
+            'url' => self::$endpoint,
+            'ico_url' => plugin_dir_url( __FILE__ ) . 'assets/vk.svg',
+        ];
+        return $data;
     }
 
     public static function auth_handler($userProfile, $endpoint)
