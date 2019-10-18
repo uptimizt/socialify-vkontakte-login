@@ -29,6 +29,7 @@ final class VkontakteLogin
 {
     public static $option_name = 'socialify_config_vkontakte';
     public static $endpoint = '/socialify/Vkontakte/';
+    public static $provider_name = 'Vkontakte';
 
     public static $data = [
         'settings_section_title' => 'Vkontakte Login',
@@ -46,25 +47,63 @@ final class VkontakteLogin
                 return;
             }
 
+            add_filter('socialify_auth_process', [__CLASS__, 'auth_process'], 11, 2);
+//            add_filter('socialify_user_profile', [__CLASS__, 'auth_handler'], 11, 2);
+
             add_action('admin_init', [__CLASS__, 'add_settings']);
-            add_filter('socialify_user_profile', [__CLASS__, 'auth_handler'], 11, 2);
 
             add_filter('socialify_shortcode_data', [__CLASS__, 'add_btn_for_shortcode']);
 
         });
     }
 
+
     /**
-     * add_btn_for_shortcode
+     * apply_filters('socialify_auth_process', $auth_process_data);
      */
-    public static function add_btn_for_shortcode($data)
+    public static function auth_process($auth_process_data, $endpoint)
     {
-        $data['login_items']['vkontakte'] = [
-            'url' => self::$endpoint,
-            'ico_url' => plugin_dir_url( __FILE__ ) . 'assets/vk.svg',
-        ];
-        return $data;
+        /**
+         * if not that provider - exit
+         */
+        if (self::$provider_name != $endpoint) {
+            return $auth_process_data;
+        }
+
+
+        if(!$config = self::get_config()){
+            return $auth_process_data;
+        }
+
+        $adapter = new \Hybridauth\Provider\Vkontakte($config);
+
+        if(!empty($_GET['redirect_to'])){
+            $redirect_to = $_GET['redirect_to'];
+            $adapter->getStorage()->set('socialify_redirect_to', $redirect_to);
+        }
+
+        //Attempt to authenticate the user with Facebook
+        if($accessToken = $adapter->getAccessToken()){
+            $adapter->setAccessToken($accessToken);
+        }
+
+        $adapter->authenticate();
+
+        //Retrieve the user's profile
+//        $userProfile = $adapter->getUserProfile();
+
+        $auth_process_data['user_data'] = $adapter->getUserProfile();
+        $auth_process_data['redirect_to'] = $adapter->getStorage()->get('socialify_redirect_to');
+        $auth_process_data['provider'] = self::$provider_name;
+
+
+        //Disconnect the adapter
+        $adapter->disconnect();
+
+        return $auth_process_data;
+
     }
+
 
     public static function auth_handler($userProfile, $endpoint)
     {
@@ -92,6 +131,19 @@ final class VkontakteLogin
         $adapter->disconnect();
 
         return $userProfile;
+    }
+
+
+    /**
+     * add_btn_for_shortcode
+     */
+    public static function add_btn_for_shortcode($data)
+    {
+        $data['login_items']['vkontakte'] = [
+            'url' => self::$endpoint,
+            'ico_url' => plugin_dir_url( __FILE__ ) . 'assets/vk.svg',
+        ];
+        return $data;
     }
 
     public static function get_config(){
