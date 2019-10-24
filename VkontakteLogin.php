@@ -9,7 +9,7 @@
  * Domain Path:  /languages/
  * Requires PHP: 5.6
  * GitHub Plugin URI: https://github.com/uptimizt/socialify-vkontakte-login
- * Version:      0.4
+ * Version:      0.5
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
